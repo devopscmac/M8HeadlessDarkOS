@@ -29,20 +29,114 @@ For M8 Headless, you also need:
 
 ## Quick Start
 
-### Building the OS Image
+### Step 1: Clone the repositories
+
+All three repos must be siblings in the same directory:
 
 ```bash
-# Clone the repository and navigate here
-cd /path/to/M8HeadlessDarkOS
+mkdir -p ~/Repos/headless
+cd ~/Repos/headless
 
-# Build for R36S Plus (takes 3–19 hours depending on caching)
-make r36splus
+git clone https://github.com/christianhaitian/arkos.git dArkOS
+git clone https://github.com/laamaa/m8c.git m8c
+git clone <this-repo-url> M8HeadlessDarkOS
 
-# Or with options
-ENABLE_CACHE=n BUILD_ARMHF=n make r36splus
+cd M8HeadlessDarkOS
 ```
 
-See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed build instructions, caching setup, and troubleshooting.
+### Step 2: Install host dependencies
+
+Run once on a fresh machine. This installs the ARM64 cross-compiler, build tools,
+and compiles the m8c binary to `bin/m8c-r36splus`:
+
+```bash
+bash setup_host.sh
+```
+
+What it installs:
+- `gcc-aarch64-linux-gnu`, `cmake`, `pkg-config` — ARM64 cross-compiler toolchain
+- `qemu-user-static`, `debootstrap`, `btrfs-progs`, `p7zip-full`, `parted`, `dosfstools` — OS build tools
+- `libsdl3-dev:arm64`, `libserialport-dev:arm64` — m8c runtime libraries (arm64)
+- `apt-cacher-ng` — package cache to speed up rebuilds
+
+After setup, commit the compiled binary:
+
+```bash
+git add bin/m8c-r36splus
+git commit -m "Add precompiled m8c ARM64 binary for R36S Plus"
+```
+
+### Step 3: (Optional) Verify the environment
+
+```bash
+make preflight
+```
+
+Checks that dArkOS and m8c repos are found, required scripts exist, and the
+directory layout is correct. Does not start any build.
+
+### Step 4: Run the test suite
+
+```bash
+make test
+```
+
+Validates all build scripts, device configs, EmulationStation configs, and the
+m8c binary (if present). All 149 tests should pass before building.
+
+### Step 5: Build the OS image
+
+```bash
+# Standard build (recommended)
+make r36splus
+
+# Build without apt cache (slower but simpler)
+ENABLE_CACHE=n make r36splus
+
+# 64-bit only (faster, skips 32-bit emulator support)
+BUILD_ARMHF=n make r36splus
+```
+
+The build takes **3–4 hours** with caching enabled (first run ~15–19 hours while
+downloading everything). Output: `M8HeadlessDarkOS_r36splus_<MMDDYYYY>.img.7z`
+
+Build progress is logged to `build.log`.
+
+### Step 6: Flash to SD card
+
+```bash
+# Find your SD card device
+lsblk
+
+# Extract the image (replace date)
+7z e M8HeadlessDarkOS_r36splus_*.img.7z
+
+# Flash — replace /dev/sdX with your SD card (double-check this!)
+sudo dd if=M8HeadlessDarkOS_r36splus_*.img of=/dev/sdX bs=4M status=progress conv=fsync
+sync
+```
+
+> **Warning:** `dd` will overwrite whatever is on `/dev/sdX`. Confirm the device
+> with `lsblk` before running.
+
+### Step 7: First boot
+
+1. Insert the SD card into your R36S Plus and power on
+2. The first boot expands the filesystem automatically (takes ~60 seconds)
+3. EmulationStation will launch into the main menu
+
+### Step 8: Set up M8 Headless on-device
+
+Connect via SSH or open a terminal and run:
+
+```bash
+m8c_setup
+```
+
+This verifies m8c is installed, checks USB device detection, and confirms audio
+and udev rules are working.
+
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) for advanced build options, cross-compilation details, and troubleshooting.
 
 ### Flashing to SD Card
 
