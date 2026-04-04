@@ -72,20 +72,31 @@ fi
 echo ""
 echo "[3/5] Building SDL3 for aarch64..."
 
+# SDL3's KMS/DRM video backend requires libdrm headers for cross-compilation.
+# SDL_UNIX_CONSOLE_BUILD=ON bypasses the X11/Wayland check but also sets
+# SDL_VIDEO=OFF by default — we must override that back to ON to keep the
+# render subsystem (SDL_DestroyTexture etc.) in the library.
+echo "  Installing arm64 libdrm/udev headers for KMS/DRM backend..."
+sudo apt-get install -y libdrm-dev:arm64 libudev-dev:arm64 2>/dev/null || true
+
 SDL3_TAG="release-3.2.14"
 SDL3_SRC="/tmp/SDL3_src"
 SDL3_BUILD="/tmp/SDL3_build_aarch64"
 
 if [ -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
   echo "  OK: SDL3 already built (found ${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc)"
-  echo "  (To force a rebuild: sudo rm -rf ${AARCH64_SYSROOT} and re-run)"
+  echo "  (To force a rebuild: sudo rm -rf ${AARCH64_SYSROOT} /tmp/SDL3_* and re-run)"
 else
   echo "  Cloning SDL3 ${SDL3_TAG}..."
   rm -rf "${SDL3_SRC}" "${SDL3_BUILD}"
   git clone --depth=1 --branch "${SDL3_TAG}" \
     https://github.com/libsdl-org/SDL.git "${SDL3_SRC}"
 
-  echo "  Configuring SDL3 for aarch64 (KMS/DRM backend, no X11/Wayland)..."
+  echo "  Configuring SDL3 for aarch64 (KMS/DRM + render, no X11/Wayland)..."
+  # SDL_UNIX_CONSOLE_BUILD=ON  — skip the X11/Wayland-present check
+  # SDL_VIDEO=ON               — must be explicit: UNIX_CONSOLE_BUILD sets it OFF by default
+  # SDL_RENDER=ON              — render subsystem (SDL_DestroyTexture etc.); requires VIDEO=ON
+  # SDL_KMSDRM=ON              — use KMS/DRM display backend for bare-metal Linux
   cmake -S "${SDL3_SRC}" -B "${SDL3_BUILD}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
@@ -93,8 +104,15 @@ else
     -DCMAKE_SYSTEM_NAME=Linux \
     -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
     -DCMAKE_INSTALL_PREFIX="${AARCH64_SYSROOT}" \
+    -DCMAKE_FIND_ROOT_PATH="/usr/aarch64-linux-gnu;${AARCH64_SYSROOT}" \
+    -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+    -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+    -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
     -DSDL_SHARED=ON \
     -DSDL_STATIC=OFF \
+    -DSDL_UNIX_CONSOLE_BUILD=ON \
+    -DSDL_VIDEO=ON \
+    -DSDL_RENDER=ON \
     -DSDL_KMSDRM=ON \
     -DSDL_X11=OFF \
     -DSDL_WAYLAND=OFF \
@@ -103,8 +121,7 @@ else
     -DSDL_OPENGLES=ON \
     -DSDL_VULKAN=OFF \
     -DSDL_TESTS=OFF \
-    -DSDL_EXAMPLES=OFF \
-    -DSDL_UNIX_CONSOLE_BUILD=ON
+    -DSDL_EXAMPLES=OFF
 
   echo "  Compiling SDL3 ($(nproc) cores)..."
   cmake --build "${SDL3_BUILD}" --parallel "$(nproc)"
