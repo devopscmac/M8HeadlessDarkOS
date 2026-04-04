@@ -200,36 +200,55 @@ make r36splus
 
 ## Cross-Compiling m8c Standalone (Without Full OS Build)
 
-To produce just the m8c binary for ARM64 without building the full OS:
+The easiest way is `setup_host.sh`, which handles everything automatically:
 
 ```bash
-# Install cross-compilation tools on Ubuntu/Debian host
-sudo dpkg --add-architecture arm64
-sudo apt-get update
-sudo apt-get install -y \
-  gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
-  cmake pkg-config \
-  libsdl3-dev:arm64 libserialport-dev:arm64 \
-  libudev-dev:arm64
+bash setup_host.sh
+```
 
-# Cross-compile m8c
+SDL3 is not reliably available as an arm64 package on Ubuntu, so `setup_host.sh`
+builds both SDL3 and libserialport from source and installs them to
+`/opt/aarch64-sysroot/`. The m8c cmake invocation then uses that sysroot via
+`CMAKE_PREFIX_PATH` and `PKG_CONFIG_PATH`.
+
+To do it manually:
+
+```bash
+# 1. Install cross-compiler
+sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake ninja-build git
+
+SYSROOT=/opt/aarch64-sysroot
+
+# 2. Build SDL3 for aarch64
+git clone --depth=1 --branch release-3.2.14 https://github.com/libsdl-org/SDL.git /tmp/SDL3
+cmake -S /tmp/SDL3 -B /tmp/SDL3_build -G Ninja \
+  -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+  -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+  -DCMAKE_INSTALL_PREFIX=${SYSROOT} \
+  -DSDL_SHARED=ON -DSDL_KMSDRM=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_TESTS=OFF
+cmake --build /tmp/SDL3_build --parallel $(nproc)
+sudo cmake --install /tmp/SDL3_build
+
+# 3. Build libserialport for aarch64
+git clone --depth=1 https://github.com/sigrokproject/libserialport.git /tmp/libserialport
+cd /tmp/libserialport && ./autogen.sh
+CC=aarch64-linux-gnu-gcc ./configure --host=aarch64-linux-gnu --prefix=${SYSROOT}
+make -j$(nproc) && sudo make install
+cd -
+
+# 4. Build m8c
 cd ../m8c
-mkdir build_aarch64
+PKG_CONFIG_PATH=${SYSROOT}/lib/pkgconfig \
 cmake -S . -B build_aarch64 \
   -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-  -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
-  -DCMAKE_SYSTEM_NAME=Linux \
-  -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-  -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
+  -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+  -DCMAKE_PREFIX_PATH=${SYSROOT} \
+  -DCMAKE_FIND_ROOT_PATH=${SYSROOT} \
   -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
   -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
   -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-  -DUSE_LIBSERIALPORT=ON \
-  -DUSE_LIBUSB=OFF \
-  -DUSE_RTMIDI=OFF
+  -DUSE_LIBSERIALPORT=ON -DUSE_LIBUSB=OFF -DUSE_RTMIDI=OFF
 cmake --build build_aarch64 --parallel $(nproc)
-
-# Copy to M8HeadlessDarkOS bin/
 cp build_aarch64/m8c ../M8HeadlessDarkOS/bin/m8c-r36splus
 ```
 

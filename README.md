@@ -53,10 +53,12 @@ and compiles the m8c binary to `bin/m8c-r36splus`:
 bash setup_host.sh
 ```
 
-What it installs:
-- `gcc-aarch64-linux-gnu`, `cmake`, `pkg-config` — ARM64 cross-compiler toolchain
+What it installs/builds:
+- `gcc-aarch64-linux-gnu`, `cmake`, `ninja-build` — ARM64 cross-compiler toolchain
 - `qemu-user-static`, `debootstrap`, `btrfs-progs`, `p7zip-full`, `parted`, `dosfstools` — OS build tools
-- `libsdl3-dev:arm64`, `libserialport-dev:arm64` — m8c runtime libraries (arm64)
+- **SDL3** — built from source for aarch64 (SDL3 has no reliable arm64 package on Ubuntu)
+- **libserialport** — built from source for aarch64
+- **m8c** — cross-compiled to `bin/m8c-r36splus` using the above
 - `apt-cacher-ng` — package cache to speed up rebuilds
 
 After setup, commit the compiled binary:
