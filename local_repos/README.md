@@ -50,9 +50,9 @@ To use local mirrors instead of GitHub, set these environment variables before
 running `make r36splus`:
 
 ```bash
-export RK3326_CORE_BUILDS_REPO="file:///home/cmacmurray/Repos/headless/M8HeadlessDarkOS/local_repos/rk3326_core_builds"
-export RETROARCH_CORES_REPO="file:///home/cmacmurray/Repos/headless/M8HeadlessDarkOS/local_repos/retroarch-cores"
-export LINUX_KERNEL_REPO="file:///home/cmacmurray/Repos/headless/M8HeadlessDarkOS/local_repos/linux"
+export RK3326_CORE_BUILDS_REPO="file:///path/to/M8HeadlessDarkOS/local_repos/rk3326_core_builds"
+export RETROARCH_CORES_REPO="file:///path/to/M8HeadlessDarkOS/local_repos/retroarch-cores"
+export LINUX_KERNEL_REPO="file:///path/to/M8HeadlessDarkOS/local_repos/linux"
 ```
 
 The build system checks these variables and falls back to the upstream URLs if
