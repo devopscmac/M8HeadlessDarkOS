@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!-- EmulationStation settings for R36S Plus (720x720 square IPS display) -->
+<bool name="DrawClock" value="false" />
+<bool name="FavoritesFirst" value="false" />
+<bool name="QuickSystemSelect" value="false" />
+<bool name="ScreenSaverMarquee" value="false" />
+<int name="MaxVRAM" value="150" />
+<string name="CollectionSystemsAuto" value="favorites" />
+<string name="FolderViewMode" value="always" />
+<!-- Hide systems not applicable to R36S Plus -->
+<string name="HiddenSystems" value="alg;wolf;easyrpg;scummvm" />
+<string name="LogLevel" value="disabled" />
+<string name="SaveGamelistsMode" value="on exit" />
+<string name="ScreenSaverBehavior" value="random video" />
+<string name="ScreenSaverGameInfo" value="always" />
+<string name="SlideshowScreenSaverBackgroundAudioFile" value="/home/ark/.emulationstation/slideshow/audio/slideshow_bg.wav" />
+<string name="ThemeRegionName" value="" />
+<!-- Use a theme that supports 1:1 square screens -->
+<string name="ThemeSet" value="es-theme-nes-box" />
+<string name="TransitionStyle" value="instant" />
+<string name="VerbalBatteryWarning" value="no" />
+<!-- 1:1 aspect ratio for 720x720 display -->
+<string name="subset.Emulationstation Screen" value="1:1" />
+<string name="GameLoadingIMode" value="pic" />
+<!-- Display resolution hint for ES -->
+<int name="WindowWidth" value="720" />
+<int name="WindowHeight" value="720" />

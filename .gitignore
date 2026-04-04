@@ -1,0 +1,50 @@
+# Build artifacts
+Arkbuild/
+Arkbuild32/
+Arkbuild-final/
+Arkbuild_ccache/
+Arkbuild_package_cache/
+mnt/
+
+# Disk images
+*.img
+*.img.7z
+*.img.7z.001
+*.img.7z.002
+
+# Build logs
+build.log
+build.log.*
+
+# Toolchain (downloaded during build, not committed)
+/opt/toolchains/
+
+# Downloaded sources
+rg351/
+odroidgoA-4.4.y/
+rk3566/
+
+# Temporary files
+wget-log*
+*.tmp
+*.swp
+.DS_Store
+
+# Loop devices
+loopdev*
+
+# APT cache
+apt-cacher-ng.preseed
+
+# Editor files
+.vscode/
+*.orig
+
+# m8c cross-build artifacts (standalone builds)
+../m8c/build_aarch64/
+../m8c/build_arm64/
+
+# Keep the bin/ directory but not actual binaries (too large for git)
+# Precompiled binaries should be attached as release artifacts
+bin/*
+!bin/.gitkeep

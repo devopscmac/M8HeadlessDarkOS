@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- EmulationStation systems config for M8HeadlessDarkOS R36S Plus -->
+<!-- Extends dArkOS RK3326 systems config with M8 Headless entry -->
+<!-- Based on: dArkOS es_systems.cfg.rk3326 -->
+
+<systemList xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <!-- ================================================================== -->
+    <!-- M8 Headless — Dirtywave M8 Tracker remote display client           -->
+    <!-- ================================================================== -->
+    <system>
+        <name>m8c</name>
+        <fullname>M8 Music Tracker</fullname>
+        <!-- Project files stored here for reference/backup -->
+        <path>/roms/m8c/</path>
+        <extension>.m8s .M8S .m8i .M8I .txt .TXT</extension>
+        <!-- Launching any file (or no file) launches m8c directly -->
+        <command>sudo perfmax %GOVERNOR% %ROM%; /opt/m8c/launch_m8c.sh; sudo perfnorm</command>
+        <platform>m8c</platform>
+        <theme>m8c</theme>
+        <manufacturer>Dirtywave</manufacturer>
+        <release>2020</release>
+        <hardware>music tracker</hardware>
+    </system>
+
+    <!-- ================================================================== -->
+    <!-- All standard dArkOS RK3326 systems follow                          -->
+    <!-- (Sourced from dArkOS es_systems.cfg.rk3326)                        -->
+    <!-- ================================================================== -->
+
+    <system>
+        <name>amiga</name>
+        <fullname>Amiga</fullname>
+        <path>/roms/amiga</path>
+        <extension>.adf .ADF .hdf .HDF .ipf .IPF .lha .LHA .m3u .M3U .zip .ZIP</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/amiga.sh %EMULATOR% %CORE% %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>puae2021</core>
+                    <core>puae</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>amiga</platform>
+        <theme>amiga</theme>
+        <manufacturer>Commodore</manufacturer>
+        <release>1985</release>
+        <hardware>computer</hardware>
+    </system>
+
+    <system>
+        <name>nes</name>
+        <fullname>Nintendo Entertainment System</fullname>
+        <path>/roms/nes</path>
+        <extension>.nes .NES .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>fceumm</core>
+                    <core>nestopia</core>
+                    <core>mesen</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>nes</platform>
+        <theme>nes</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>1983</release>
+        <hardware>console</hardware>
+    </system>
+
+    <system>
+        <name>snes</name>
+        <fullname>Super Nintendo</fullname>
+        <path>/roms/snes</path>
+        <extension>.sfc .SFC .smc .SMC .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>snes9x</core>
+                    <core>snes9x2010</core>
+                    <core>snes9x2002</core>
+                    <core>bsnes_mercury_balanced</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>snes</platform>
+        <theme>snes</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>1990</release>
+        <hardware>console</hardware>
+    </system>
+
+    <system>
+        <name>gb</name>
+        <fullname>Game Boy</fullname>
+        <path>/roms/gb</path>
+        <extension>.gb .GB .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>gambatte</core>
+                    <core>mgba</core>
+                    <core>gearboy</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>gb</platform>
+        <theme>gb</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>1989</release>
+        <hardware>portable</hardware>
+    </system>
+
+    <system>
+        <name>gbc</name>
+        <fullname>Game Boy Color</fullname>
+        <path>/roms/gbc</path>
+        <extension>.gbc .GBC .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>gambatte</core>
+                    <core>mgba</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>gbc</platform>
+        <theme>gbc</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>1998</release>
+        <hardware>portable</hardware>
+    </system>
+
+    <system>
+        <name>gba</name>
+        <fullname>Game Boy Advance</fullname>
+        <path>/roms/gba</path>
+        <extension>.gba .GBA .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>mgba</core>
+                    <core>gpsp</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>gba</platform>
+        <theme>gba</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>2001</release>
+        <hardware>portable</hardware>
+    </system>
+
+    <system>
+        <name>genesis</name>
+        <fullname>Sega Genesis</fullname>
+        <path>/roms/genesis</path>
+        <extension>.md .MD .gen .GEN .bin .BIN .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>genesis_plus_gx</core>
+                    <core>picodrive</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>genesis</platform>
+        <theme>genesis</theme>
+        <manufacturer>Sega</manufacturer>
+        <release>1988</release>
+        <hardware>console</hardware>
+    </system>
+
+    <system>
+        <name>psx</name>
+        <fullname>PlayStation</fullname>
+        <path>/roms/psx</path>
+        <extension>.cue .CUE .chd .CHD .iso .ISO .pbp .PBP .bin .BIN .m3u .M3U</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>pcsx_rearmed</core>
+                    <core>swanstation</core>
+                    <core>mednafen_psx</core>
+                </cores>
+            </emulator>
+            <emulator name="standalone">
+                <cores>
+                    <core>duckstation</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>psx</platform>
+        <theme>psx</theme>
+        <manufacturer>Sony</manufacturer>
+        <release>1994</release>
+        <hardware>console</hardware>
+    </system>
+
+    <system>
+        <name>n64</name>
+        <fullname>Nintendo 64</fullname>
+        <path>/roms/n64</path>
+        <extension>.z64 .Z64 .n64 .N64 .v64 .V64 .zip .ZIP .7z .7Z</extension>
+        <command>sudo perfmax %GOVERNOR% %ROM%; nice -n -19 /usr/local/bin/retroarch -L /home/ark/.config/retroarch/cores/%CORE%_libretro.so %ROM%; sudo perfnorm</command>
+        <emulators>
+            <emulator name="retroarch">
+                <cores>
+                    <core>mupen64plus_next</core>
+                    <core>parallel_n64</core>
+                </cores>
+            </emulator>
+            <emulator name="standalone">
+                <cores>
+                    <core>mupen64plus</core>
+                </cores>
+            </emulator>
+        </emulators>
+        <platform>n64</platform>
+        <theme>n64</theme>
+        <manufacturer>Nintendo</manufacturer>
+        <release>1996</release>
+        <hardware>console</hardware>
+    </system>
+
+    <system>
+        <name>ports</name>
+        <fullname>Ports</fullname>
+        <path>/roms/ports</path>
+        <extension>.sh .SH</extension>
+        <command>bash %ROM%</command>
+        <platform>ports</platform>
+        <theme>ports</theme>
+        <manufacturer>Various</manufacturer>
+        <hardware>ports</hardware>
+    </system>
+
+    <system>
+        <name>tools</name>
+        <fullname>Tools</fullname>
+        <path>/roms/tools</path>
+        <extension>.sh .SH</extension>
+        <command>bash %ROM%</command>
+        <platform>tools</platform>
+        <theme>tools</theme>
+        <manufacturer>Various</manufacturer>
+        <hardware>tools</hardware>
+    </system>
+
+</systemList>

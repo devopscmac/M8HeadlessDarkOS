@@ -1,0 +1,149 @@
+#!/bin/bash
+# EmulationStation launcher for R36S Plus (PK3326 / RK3326, 720x720)
+# Based on dArkOS emulationstation.sh.g350
+
+export SDL_ASSERT="always_ignore"
+
+# R36S Plus uses the standard RK3326 GPU address
+GPU_ADDR="ff400000"
+
+. /usr/local/bin/buttonmon.sh
+
+boot_controls() {
+  export DIALOGRC=/opt/inttools/noshadows.dialogrc
+  printf "\033c" > /dev/tty1
+  # 720x720 display — use medium font
+  sudo setfont /usr/share/consolefonts/Lat7-TerminusBold28x14.psf.gz
+
+  if [[ -z $(pgrep -f gptokeyb) ]] && [[ -z $(pgrep -f oga_controls) ]]; then
+    sudo chmod 666 /dev/uinput
+    export SDL_GAMECONTROLLERCONFIG_FILE="/opt/inttools/gamecontrollerdb.txt"
+    /opt/inttools/gptokeyb -c "/opt/inttools/keys.gptk" > /dev/null &
+    disown
+    set_gptokeyb="Y"
+  fi
+}
+
+kill_boot_controls() {
+  if [[ ! -z "$set_gptokeyb" ]]; then
+    pgrep -f gptokeyb | sudo xargs kill -9
+    unset SDL_GAMECONTROLLERCONFIG_FILE
+  fi
+}
+
+sudo chmod 666 /dev/tty1
+export TERM=linux
+export XDG_RUNTIME_DIR=/run/user/$UID/
+
+isitrgui=$(cat ~/.config/retroarch/retroarch.cfg | grep 'menu_driver = "rgui"')
+
+Test_Button_B
+if [ "$?" -eq "10" ]; then
+  printf "\033c" > /dev/tty1
+  boot_controls
+  sudo setfont /usr/share/consolefonts/Lat7-TerminusBold28x14.psf.gz
+  cd /usr/bin/emulationstation
+
+  while true; do
+    selection=(dialog \
+      --backtitle "Boot and Recovery Tools" \
+      --title "BaRT — M8HeadlessDarkOS" \
+      --no-collapse \
+      --clear \
+      --cancel-label "You must select one" \
+      --menu "Distro: M8HeadlessDarkOS $(cat /etc/m8headlessdarkos_version | grep Version | cut -d' ' -f2)    Batt: $(cat /sys/class/power_supply/battery/capacity)%" 16 64 12)
+
+    options=(
+      "1)" "EmulationStation"
+      "2)" "RetroArch"
+      "3)" "M8 Headless"
+      "4)" "Wifi"
+      "5)" "Enable Remote Services"
+      "6)" "351Files"
+      "7)" "Backup Settings"
+      "8)" "Restore Settings"
+      "9)" "Reboot"
+      "10)" "Power Off"
+    )
+
+    choices=$("${selection[@]}" "${options[@]}" 2>&1 > /dev/tty1)
+
+    for choice in $choices; do
+      case $choice in
+        "1)") kill_boot_controls
+              printf "\033c" > /dev/tty1
+              sudo systemctl restart ogage &
+              [ -f "/home/ark/.config/.BOOT_TO_RETROARCH" ] && rm -f /home/ark/.config/.BOOT_TO_RETROARCH
+              /usr/bin/emulationstation/emulationstation.sh
+              exit
+              ;;
+        "2)") if [ ! -z "$isitrgui" ]; then
+                if [ ! -f "~/.config/.setxmb" ]; then
+                  sed -i '/menu_driver = \"rgui\"/s//menu_driver = \"xmb\"/g' /home/ark/.config/retroarch/retroarch.cfg
+                  touch ~/.config/.setxmb
+                fi
+              fi
+              touch /home/ark/.config/.BOOT_TO_RETROARCH
+              kill_boot_controls
+              printf "\033c" > /dev/tty1
+              sudo systemctl restart ogage &
+              /usr/bin/emulationstation/emulationstation.sh
+              exit
+              ;;
+        "3)") kill_boot_controls
+              printf "\033c" > /dev/tty1
+              /opt/m8c/launch_m8c.sh
+              boot_controls
+              ;;
+        "4)") kill_boot_controls
+              /opt/system/Wifi.sh
+              boot_controls
+              ;;
+        "5)") /opt/system/Enable\ Remote\ Services.sh 2>&1 > /dev/tty1
+              ;;
+        "6)") /opt/system/351Files.sh 2>&1 > /dev/tty1
+              ;;
+        "7)") kill_boot_controls
+              /opt/system/Advanced/"Backup ArkOS Settings.sh" 2>&1 > /dev/tty1
+              boot_controls
+              ;;
+        "8)") kill_boot_controls
+              /opt/system/Advanced/"Restore ArkOS Settings.sh" 2>&1 > /dev/tty1
+              boot_controls
+              ;;
+        "9)")  sudo reboot ;;
+        "10)") sudo shutdown now ;;
+      esac
+    done
+  done
+else
+  if [ ! -f "/home/ark/.config/.BOOT_TO_RETROARCH" ]; then
+    esdir="$(dirname $0)"
+    while true; do
+      rm -f /tmp/es-restart /tmp/es-sysrestart /tmp/es-shutdown
+      "$esdir/emulationstation" "$@"
+      ret=$?
+      [ -f /tmp/es-restart ] && continue
+      if [ -f /tmp/es-sysrestart ]; then
+        rm -f /tmp/es-sysrestart
+        systemctl reboot
+        break
+      fi
+      if [ -f /tmp/es-shutdown ]; then
+        rm -f /tmp/es-shutdown
+        systemctl poweroff
+        break
+      fi
+      break
+    done
+    exit $ret
+  else
+    # Boot to RetroArch (performance mode)
+    echo performance | sudo tee /sys/devices/platform/${GPU_ADDR}.gpu/devfreq/${GPU_ADDR}.gpu/governor
+    echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+    echo performance | sudo tee /sys/devices/platform/dmc/devfreq/dmc/governor
+    while true; do
+      retroarch "$@"
+    done
+  fi
+fi

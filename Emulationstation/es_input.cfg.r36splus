@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!-- EmulationStation input configuration for R36S Plus -->
+<!-- Device: R36S Plus (PK3326 / RK3326), GO-Super Gamepad compatible -->
+<inputList>
+    <inputConfig type="joystick" deviceName="GO-Super Gamepad" deviceGUID="190000004b4800000011000000010000">
+        <!-- Face buttons -->
+        <input name="a"            type="button" id="1"  value="1" />
+        <input name="b"            type="button" id="0"  value="1" />
+        <input name="x"            type="button" id="2"  value="1" />
+        <input name="y"            type="button" id="3"  value="1" />
+
+        <!-- D-Pad (digital) -->
+        <input name="up"           type="button" id="8"  value="1" />
+        <input name="down"         type="button" id="9"  value="1" />
+        <input name="left"         type="button" id="10" value="1" />
+        <input name="right"        type="button" id="11" value="1" />
+
+        <!-- Shoulder buttons -->
+        <input name="leftshoulder"  type="button" id="4"  value="1" />
+        <input name="rightshoulder" type="button" id="5"  value="1" />
+        <input name="lefttrigger"   type="button" id="6"  value="1" />
+        <input name="righttrigger"  type="button" id="7"  value="1" />
+
+        <!-- Start / Select -->
+        <input name="start"        type="button" id="13" value="1" />
+        <input name="select"       type="button" id="12" value="1" />
+
+        <!-- Left analog stick -->
+        <input name="leftanalogleft"   type="axis" id="0" value="-1" />
+        <input name="leftanalogright"  type="axis" id="0" value="1"  />
+        <input name="leftanalogup"     type="axis" id="1" value="-1" />
+        <input name="leftanalogdown"   type="axis" id="1" value="1"  />
+        <input name="leftthumb"        type="button" id="14" value="1" />
+
+        <!-- Right analog stick -->
+        <input name="rightanalogleft"  type="axis" id="2" value="-1" />
+        <input name="rightanalogright" type="axis" id="2" value="1"  />
+        <input name="rightanalogup"    type="axis" id="3" value="-1" />
+        <input name="rightanalogdown"  type="axis" id="3" value="1"  />
+        <input name="rightthumb"       type="button" id="15" value="1" />
+
+        <!-- Page navigation (shoulder buttons double as page up/down in ES) -->
+        <input name="pageup"       type="button" id="4"  value="1" />
+        <input name="pagedown"     type="button" id="5"  value="1" />
+
+        <!-- System hotkey (right thumb / R3) -->
+        <input name="system_hk"    type="button" id="15" value="1" />
+    </inputConfig>
+</inputList>

@@ -1,0 +1,167 @@
+#!/bin/bash
+# =============================================================================
+# finishing_touches_r36splus.sh — R36S Plus post-build configuration
+# =============================================================================
+# Applies device-specific configuration to the built rootfs for R36S Plus.
+# This extends the dArkOS RK3326 finishing touches with:
+#   - 720x720 display configuration
+#   - M8 Headless / m8c EmulationStation entry
+#   - R36S Plus-specific audio, controls, and service setup
+# =============================================================================
+
+echo "==> finishing_r36splus: Applying R36S Plus device configuration..."
+
+# We source the base RK3326 finishing touches from dArkOS first
+# This sets up boot.ini, audio, hotkeydaemon, etc.
+source "${DARKOS_DIR}/finishing_touches.sh"
+
+# ---------------------------------------------------------------------------
+# Override: hostname = r36splus
+# ---------------------------------------------------------------------------
+echo "r36splus" | sudo tee Arkbuild/etc/hostname > /dev/null
+sudo sed -i "s/127.0.1.1.*/127.0.1.1\tr36splus/" Arkbuild/etc/hosts
+
+# Record device identity for runtime scripts
+echo "R36SPLUS" | sudo tee Arkbuild/home/ark/.config/.DEVICE > /dev/null
+
+# ---------------------------------------------------------------------------
+# Display: 720x720 — EmulationStation configuration
+# ---------------------------------------------------------------------------
+echo "==> finishing_r36splus: Installing ES configs for 720x720 display..."
+
+sudo mkdir -p Arkbuild/home/ark/.emulationstation/
+
+# ES settings (720x720 display, square screen)
+sudo cp "Emulationstation/es_settings.cfg.r36splus" \
+        Arkbuild/home/ark/.emulationstation/es_settings.cfg
+
+# ES input configuration (R36S Plus gamepad mappings)
+sudo cp "Emulationstation/es_input.cfg.r36splus" \
+        Arkbuild/home/ark/.emulationstation/es_input.cfg
+
+# ES systems config (RK3326-based, includes m8c system entry)
+sudo cp "Emulationstation/es_systems.cfg.r36splus" \
+        Arkbuild/etc/emulationstation/es_systems.cfg
+
+# ES launch script for R36S Plus
+sudo cp "Emulationstation/emulationstation.sh.r36splus" \
+        Arkbuild/usr/bin/emulationstation/emulationstation.sh
+sudo chmod 755 Arkbuild/usr/bin/emulationstation/emulationstation.sh
+
+sudo chroot Arkbuild/ bash -c "chown -R ark:ark /home/ark/.emulationstation/"
+
+# ---------------------------------------------------------------------------
+# RetroArch: R36S Plus display configuration
+# ---------------------------------------------------------------------------
+echo "==> finishing_r36splus: Configuring RetroArch for 720x720..."
+
+# RetroArch needs to know the video dimensions for the 720x720 square display
+RETROARCH_CFG="Arkbuild/home/ark/.config/retroarch/retroarch.cfg"
+if [ -f "${RETROARCH_CFG}" ]; then
+  # Set video output dimensions for the square display
+  sudo sed -i 's/video_fullscreen_x = .*/video_fullscreen_x = "720"/' "${RETROARCH_CFG}" 2>/dev/null || true
+  sudo sed -i 's/video_fullscreen_y = .*/video_fullscreen_y = "720"/' "${RETROARCH_CFG}" 2>/dev/null || true
+fi
+
+# Copy R36S Plus specific retroarch config additions
+if [ -f "device/${UNIT}/retroarch.cfg" ]; then
+  sudo cp "device/${UNIT}/retroarch.cfg" \
+          "Arkbuild/home/ark/.config/retroarch/retroarch.cfg.${UNIT}"
+fi
+
+# ---------------------------------------------------------------------------
+# M8 Headless: Create /roms/m8c directory for M8 patches/samples
+# ---------------------------------------------------------------------------
+echo "==> finishing_r36splus: Setting up M8 Headless directories..."
+
+sudo mkdir -p Arkbuild/roms/m8c
+sudo chroot Arkbuild/ bash -c "chown ark:ark /roms/m8c"
+
+# Create m8c data directory in ark home
+sudo mkdir -p Arkbuild/home/ark/.local/share/m8c
+sudo chroot Arkbuild/ bash -c "chown -R ark:ark /home/ark/.local/share/m8c"
+
+# Copy the default m8c config for R36S Plus
+sudo mkdir -p Arkbuild/home/ark/.local/share/m8c/
+sudo cp "device/${UNIT}/m8c.ini" \
+        Arkbuild/home/ark/.local/share/m8c/config.ini
+sudo chroot Arkbuild/ bash -c "chown ark:ark /home/ark/.local/share/m8c/config.ini"
+
+# ---------------------------------------------------------------------------
+# M8 Headless: Add to system tools menu
+# ---------------------------------------------------------------------------
+echo "==> finishing_r36splus: Adding M8 Headless launcher to system tools..."
+
+sudo mkdir -p "Arkbuild/opt/system/Tools"
+
+# Create the M8 Headless launcher shortcut in the tools menu
+cat <<'LAUNCHER_EOF' | sudo tee Arkbuild/opt/system/Tools/M8\ Headless.sh > /dev/null
+#!/bin/bash
+# Launch M8 Headless client
+# Requires M8 tracker or Teensy with M8 Headless firmware connected via USB
+
+/opt/m8c/launch_m8c.sh
+LAUNCHER_EOF
+sudo chmod 755 "Arkbuild/opt/system/Tools/M8 Headless.sh"
+
+# ---------------------------------------------------------------------------
+# M8 Headless: Add EmulationStation system entry for M8 ROMs
+# ---------------------------------------------------------------------------
+# This creates a dedicated "M8 Music Tracker" section in EmulationStation
+# where users can store M8 project files (.m8s, .m8i) for reference
+sudo mkdir -p Arkbuild/roms/m8c
+cat <<'M8README_EOF' | sudo tee "Arkbuild/roms/m8c/README.txt" > /dev/null
+M8 Music Tracker — Headless Mode
+=================================
+
+This folder is for M8 Tracker project files and instruments.
+To use M8 Headless:
+
+1. Connect your M8 tracker or Teensy (M8 Headless firmware) via USB-C
+2. Launch "M8 Headless" from the Tools menu, or
+3. Select any item from this list in EmulationStation
+
+M8 Headless connects automatically to /dev/m8 or /dev/ttyACM0.
+
+Controls (R36S Plus):
+  D-Pad    → M8 Navigation
+  A        → M8 A (edit/confirm)
+  B        → M8 B (back/delete char)
+  L1       → M8 OPT (option modifier)
+  R1       → M8 EDIT (edit mode)
+  Select   → M8 SHIFT (hold for shift commands)
+  Start    → M8 PLAY (play/stop)
+
+Audio:
+  M8 audio is routed through SDL audio to the R36S Plus speaker/headphones.
+  Enable in m8c: press F12, or toggle in Settings > Audio.
+
+For more info: https://github.com/laamaa/m8c
+M8README_EOF
+sudo chroot Arkbuild/ bash -c "chown -R ark:ark /roms/m8c"
+
+# ---------------------------------------------------------------------------
+# Bluetooth: Enable for R36S Plus (has BT hardware)
+# ---------------------------------------------------------------------------
+if [[ "${BUILD_BLUEALSA}" == "y" ]]; then
+  echo "==> finishing_r36splus: Configuring Bluetooth..."
+  if [ -f "${DARKOS_DIR}/build_bluealsa.sh" ]; then
+    source "${DARKOS_DIR}/build_bluealsa.sh"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Version file: record build metadata
+# ---------------------------------------------------------------------------
+cat <<EOF | sudo tee Arkbuild/etc/m8headlessdarkos_version > /dev/null
+M8HeadlessDarkOS
+Version: ${M8HEADLESS_VERSION:-1.0.0}
+Device: R36S Plus (PK3326/RK3326)
+Display: 720x720
+Build date: ${BUILD_DATE}
+Debian: ${DEBIAN_CODE_NAME:-trixie}
+EOF
+
+sudo chroot Arkbuild/ bash -c "chown root:root /etc/m8headlessdarkos_version"
+
+echo "==> finishing_r36splus: R36S Plus device configuration complete."
