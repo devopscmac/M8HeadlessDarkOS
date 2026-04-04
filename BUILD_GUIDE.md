@@ -225,7 +225,8 @@ cmake -S /tmp/SDL3 -B /tmp/SDL3_build -G Ninja \
   -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
   -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DCMAKE_INSTALL_PREFIX=${SYSROOT} \
-  -DSDL_SHARED=ON -DSDL_KMSDRM=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_TESTS=OFF
+  -DSDL_SHARED=ON -DSDL_KMSDRM=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_TESTS=OFF \
+  -DSDL_UNIX_CONSOLE_BUILD=ON
 cmake --build /tmp/SDL3_build --parallel $(nproc)
 sudo cmake --install /tmp/SDL3_build
 

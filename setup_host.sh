@@ -78,6 +78,7 @@ SDL3_BUILD="/tmp/SDL3_build_aarch64"
 
 if [ -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
   echo "  OK: SDL3 already built (found ${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc)"
+  echo "  (To force a rebuild: sudo rm -rf ${AARCH64_SYSROOT} and re-run)"
 else
   echo "  Cloning SDL3 ${SDL3_TAG}..."
   rm -rf "${SDL3_SRC}" "${SDL3_BUILD}"
@@ -102,7 +103,8 @@ else
     -DSDL_OPENGLES=ON \
     -DSDL_VULKAN=OFF \
     -DSDL_TESTS=OFF \
-    -DSDL_EXAMPLES=OFF
+    -DSDL_EXAMPLES=OFF \
+    -DSDL_UNIX_CONSOLE_BUILD=ON
 
   echo "  Compiling SDL3 ($(nproc) cores)..."
   cmake --build "${SDL3_BUILD}" --parallel "$(nproc)"
