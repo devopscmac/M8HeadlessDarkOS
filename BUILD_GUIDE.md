@@ -248,6 +248,7 @@ cmake -S . -B build_aarch64 \
   -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
   -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
   -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+  -DCMAKE_EXE_LINKER_FLAGS="-L${SYSROOT}/lib -Wl,-rpath-link,${SYSROOT}/lib" \
   -DUSE_LIBSERIALPORT=ON -DUSE_LIBUSB=OFF -DUSE_RTMIDI=OFF
 cmake --build build_aarch64 --parallel $(nproc)
 cp build_aarch64/m8c ../M8HeadlessDarkOS/bin/m8c-r36splus
