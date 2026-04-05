@@ -89,10 +89,21 @@ SDL3_TAG="release-3.2.14"
 SDL3_SRC="/tmp/SDL3_src"
 SDL3_BUILD="/tmp/SDL3_build_aarch64"
 
+# Validate any cached SDL3 has render symbols (a previous build with
+# SDL_UNIX_CONSOLE_BUILD=ON would have SDL_RENDER=OFF, causing link failures).
 if [ -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
-  echo "  OK: SDL3 already built (found ${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc)"
-  echo "  (To force a rebuild: sudo rm -rf ${AARCH64_SYSROOT} /tmp/SDL3_* and re-run)"
-else
+  if aarch64-linux-gnu-nm "${AARCH64_SYSROOT}/lib/libSDL3.so" 2>/dev/null \
+       | grep -q "T SDL_DestroyTexture"; then
+    echo "  OK: SDL3 already built with render support — skipping"
+    echo "  (To force a rebuild: sudo rm -rf ${AARCH64_SYSROOT} /tmp/SDL3_* and re-run)"
+  else
+    echo "  WARNING: Cached SDL3 is missing render symbols (SDL_RENDER was OFF)."
+    echo "  Removing stale sysroot and rebuilding..."
+    sudo rm -rf "${AARCH64_SYSROOT}"
+  fi
+fi
+
+if [ ! -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
   echo "  Cloning SDL3 ${SDL3_TAG}..."
   rm -rf "${SDL3_SRC}" "${SDL3_BUILD}"
   git clone --depth=1 --branch "${SDL3_TAG}" \
