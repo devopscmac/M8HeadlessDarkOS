@@ -26,7 +26,12 @@ if [ -f "build.log" ]; then
 fi
 
 (
-set -euo pipefail
+# Note: do NOT use set -euo pipefail here. dArkOS scripts use patterns like
+#   apt list --installed | grep -q "pkg"
+#   if [[ $? != 0 ]]; then ...
+# where grep returning 1 (not found) is a valid expected outcome. set -e would
+# kill the script before the if-check runs. dArkOS uses verify_action() for
+# error handling instead. We follow the same convention for our added steps.
 
 # ---------------------------------------------------------------------------
 # Device Configuration — R36S Plus
