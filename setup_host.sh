@@ -72,20 +72,16 @@ fi
 echo ""
 echo "[3/5] Building SDL3 for aarch64..."
 
-# SDL3's cmake requires X11 or Wayland headers to be *present* on Linux — not
-# necessarily used — before it will configure the video/render subsystems.
-# We install libx11-dev:arm64 purely to satisfy that presence check, then
-# disable X11 and Wayland with SDL_X11=OFF / SDL_WAYLAND=OFF.
-# The actual display backend used at runtime is KMS/DRM (SDL_KMSDRM=ON).
+# SDL3's cmake/macros.cmake SDL_PrintSummary raises a FATAL_ERROR if neither
+# HAVE_X11 nor HAVE_WAYLAND is set (checked regardless of SDL_KMSDRM/OFFSCREEN).
+# The official bypass is SDL_UNIX_CONSOLE_BUILD=ON, but that uses
+# cmake_dependent_option to FORCE SDL_VIDEO=OFF — removing SDL_Render symbols
+# (SDL_DestroyTexture etc.) needed by m8c. Neither SDL_KMSDRM nor SDL_OFFSCREEN
+# affects this check; it is strictly X11/Wayland only.
 #
-# NOTE: Do NOT use SDL_UNIX_CONSOLE_BUILD=ON — it uses cmake_dependent_option
-# to FORCE SDL_VIDEO=OFF (ignoring -DSDL_VIDEO=ON), which removes SDL_Render
-# symbols (SDL_DestroyTexture etc.) from the library.
-#
-# SDL3 requires at least one display backend to be present. SDL_OFFSCREEN=ON
-# is a pure-software backend that needs no system libraries, satisfies the
-# check, and keeps SDL_VIDEO + SDL_RENDER ON. At runtime, launch_m8c.sh sets
-# SDL_VIDEODRIVER=kmsdrm so the offscreen backend is never actually used.
+# Solution: after cloning, patch macros.cmake so SDL_KMSDRM=ON also bypasses
+# the check. KMS/DRM is our actual display backend (SDL_VIDEODRIVER=kmsdrm at
+# runtime in launch_m8c.sh), so this is semantically correct.
 echo "  Installing arm64 libdrm/udev headers (for optional KMS/DRM backend)..."
 sudo apt-get install -y libdrm-dev:arm64 libudev-dev:arm64 2>/dev/null || true
 
@@ -101,6 +97,18 @@ else
   rm -rf "${SDL3_SRC}" "${SDL3_BUILD}"
   git clone --depth=1 --branch "${SDL3_TAG}" \
     https://github.com/libsdl-org/SDL.git "${SDL3_SRC}"
+
+  # SDL3's cmake/macros.cmake SDL_PrintSummary raises a FATAL_ERROR if neither
+  # HAVE_X11 nor HAVE_WAYLAND is set, unless SDL_UNIX_CONSOLE_BUILD=ON.
+  # SDL_UNIX_CONSOLE_BUILD=ON is unacceptable: it uses cmake_dependent_option to
+  # FORCE SDL_VIDEO=OFF, which removes SDL_Render symbols (SDL_DestroyTexture etc).
+  # KMS/DRM and OFFSCREEN do not satisfy this check — it only tests HAVE_X11/WAYLAND.
+  #
+  # Fix: patch macros.cmake so that SDL_KMSDRM=ON also bypasses the check.
+  # This is safe: we explicitly select KMS/DRM as the display backend.
+  echo "  Patching SDL3 cmake to allow KMS/DRM-only builds (no X11/Wayland)..."
+  sed -i 's/if(NOT SDL_UNIX_CONSOLE_BUILD)/if(NOT SDL_UNIX_CONSOLE_BUILD AND NOT SDL_KMSDRM)/' \
+    "${SDL3_SRC}/cmake/macros.cmake"
 
   echo "  Configuring SDL3 for aarch64 (KMS/DRM + render, no X11/Wayland)..."
   cmake -S "${SDL3_SRC}" -B "${SDL3_BUILD}" -G Ninja \
@@ -125,7 +133,6 @@ else
     -DSDL_OPENGL=OFF \
     -DSDL_OPENGLES=ON \
     -DSDL_VULKAN=OFF \
-    -DSDL_OFFSCREEN=ON \
     -DSDL_TESTS=OFF \
     -DSDL_EXAMPLES=OFF
 

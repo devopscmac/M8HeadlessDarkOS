@@ -221,13 +221,16 @@ SYSROOT=/opt/aarch64-sysroot
 
 # 2. Build SDL3 for aarch64
 git clone --depth=1 --branch release-3.2.14 https://github.com/libsdl-org/SDL.git /tmp/SDL3
+# SDL3 cmake fatally errors if neither X11 nor Wayland is found on Linux.
+# Patch it to also allow KMS/DRM-only builds (our target backend).
+sed -i 's/if(NOT SDL_UNIX_CONSOLE_BUILD)/if(NOT SDL_UNIX_CONSOLE_BUILD AND NOT SDL_KMSDRM)/' \
+  /tmp/SDL3/cmake/macros.cmake
 cmake -S /tmp/SDL3 -B /tmp/SDL3_build -G Ninja \
   -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
   -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DCMAKE_INSTALL_PREFIX=${SYSROOT} \
   -DSDL_SHARED=ON -DSDL_VIDEO=ON -DSDL_RENDER=ON \
-  -DSDL_KMSDRM=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF \
-  -DSDL_OFFSCREEN=ON -DSDL_TESTS=OFF
+  -DSDL_KMSDRM=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_TESTS=OFF
 cmake --build /tmp/SDL3_build --parallel $(nproc)
 sudo cmake --install /tmp/SDL3_build
 
