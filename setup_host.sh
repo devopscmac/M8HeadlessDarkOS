@@ -129,6 +129,7 @@ if [ ! -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
     -DCMAKE_SYSTEM_NAME=Linux \
     -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
     -DCMAKE_INSTALL_PREFIX="${AARCH64_SYSROOT}" \
+    -DCMAKE_INSTALL_LIBDIR=lib \
     -DCMAKE_FIND_ROOT_PATH="/usr/aarch64-linux-gnu;${AARCH64_SYSROOT}" \
     -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
@@ -197,8 +198,30 @@ fi
 M8C_BUILD="${M8C_REPO}/build_aarch64_host"
 rm -rf "${M8C_BUILD}"
 
+# m8c's CMakeLists.txt uses target_link_options for SDL3 on Linux (line 40):
+#   target_link_options(${APP_NAME} PRIVATE ${SDL3_LDFLAGS})
+# cmake's link rule places LINK_FLAGS (target_link_options) BEFORE object files
+# and LINK_LIBRARIES (target_link_libraries) AFTER them:
+#   <compiler> <LINK_FLAGS> -o target <OBJECTS> <LINK_LIBRARIES>
+# Ubuntu's default --as-needed linker mode drops any -lFoo encountered before
+# the objects if no references exist yet. With target_link_options, -lSDL3
+# comes before objects → SDL3 is dropped → every SDL3 symbol is undefined.
+# Fix: temporarily patch CMakeLists.txt to use target_link_libraries instead.
+# The patched file is restored on script exit (success or failure).
+M8C_CMAKE="${M8C_REPO}/CMakeLists.txt"
+M8C_CMAKE_BAK="${M8C_CMAKE}.setup_host_orig"
+cp "${M8C_CMAKE}" "${M8C_CMAKE_BAK}"
+trap "cp '${M8C_CMAKE_BAK}' '${M8C_CMAKE}'; rm -f '${M8C_CMAKE_BAK}'" EXIT
+
+echo "  Patching m8c CMakeLists.txt: target_link_options → target_link_libraries for SDL3..."
+sed -i "s/target_link_options(\${APP_NAME} PRIVATE \${SDL3_LDFLAGS})/target_link_libraries(\${APP_NAME} PRIVATE \${SDL3_LDFLAGS})/" \
+  "${M8C_CMAKE}"
+
 echo "  Configuring m8c..."
-PKG_CONFIG_PATH="${AARCH64_SYSROOT}/lib/pkgconfig" \
+# PKG_CONFIG_LIBDIR replaces (not just prepends) the default search path so
+# a system-installed x86_64 libsdl3-dev cannot shadow our aarch64 sysroot build.
+PKG_CONFIG_LIBDIR="${AARCH64_SYSROOT}/lib/pkgconfig" \
+PKG_CONFIG_PATH="" \
 cmake -S "${M8C_REPO}" -B "${M8C_BUILD}" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
@@ -210,7 +233,7 @@ cmake -S "${M8C_REPO}" -B "${M8C_BUILD}" \
   -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
   -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
   -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-  -DCMAKE_EXE_LINKER_FLAGS="-L${AARCH64_SYSROOT}/lib -Wl,-rpath-link,${AARCH64_SYSROOT}/lib" \
+  -DCMAKE_EXE_LINKER_FLAGS="-L${AARCH64_SYSROOT}/lib -Wl,-rpath-link,${AARCH64_SYSROOT}/lib -Wl,--no-as-needed" \
   -DUSE_LIBSERIALPORT=ON \
   -DUSE_LIBUSB=OFF \
   -DUSE_RTMIDI=OFF
