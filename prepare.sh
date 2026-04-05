@@ -40,13 +40,23 @@ fi
 # ---------------------------------------------------------------------------
 # Verify dArkOS linaro toolchain is available (needed for kernel build)
 # ---------------------------------------------------------------------------
-if [ ! -d "/opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" ]; then
-  echo "==> prepare: Linaro toolchain not found, cloning..."
-  sudo mkdir -p /opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu
-  git clone --depth=1 \
+# utils.sh checks for the directory and clones if absent, but it creates the
+# directory with `sudo mkdir` (root-owned) then runs `git clone` without sudo —
+# the non-root clone cannot write to the root-owned directory and fails silently,
+# leaving an empty directory. The directory-exists check then passes on the next
+# run so utils.sh never retries. Fix: clone here with sudo before utils.sh runs,
+# checking for the actual binary not just the directory.
+LINARO_TOOLCHAIN="/opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu"
+LINARO_BIN="${LINARO_TOOLCHAIN}/bin/aarch64-linux-gnu-gcc"
+if [ ! -f "${LINARO_BIN}" ]; then
+  echo "==> prepare: Linaro toolchain missing or incomplete, cloning..."
+  sudo rm -rf "${LINARO_TOOLCHAIN}"
+  sudo mkdir -p /opt/toolchains
+  sudo git clone --depth=1 \
     https://github.com/christianhaitian/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.git \
-    /opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu
+    "${LINARO_TOOLCHAIN}"
   verify_action
+  echo "==> prepare: Linaro toolchain OK ($(${LINARO_BIN} --version | head -1))"
 fi
 
 echo "==> prepare: All build dependencies satisfied."
