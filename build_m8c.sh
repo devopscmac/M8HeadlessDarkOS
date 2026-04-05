@@ -85,7 +85,8 @@ else
       -DCMAKE_BUILD_TYPE=Release \
       -DUSE_LIBSERIALPORT=ON \
       -DUSE_LIBUSB=OFF \
-      -DUSE_RTMIDI=OFF
+      -DUSE_RTMIDI=OFF \
+      -DCMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed"
 
     # Build using all available cores
     cmake --build build_arm64 --parallel \$(nproc)
