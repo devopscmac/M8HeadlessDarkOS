@@ -40,10 +40,11 @@ else
   # Update chroot apt first (may already be done, idempotent)
   sudo chroot Arkbuild/ bash -c "apt-get update -qq" || true
 
-  # Install SDL3 build dependencies
-  # SDL3 is the graphics/audio/input layer for m8c
-  # On Debian trixie, libsdl3-dev should be available
-  install_package \
+  # Install SDL3 build dependencies inside the ARM64 chroot.
+  # install_package expects an arch specifier as $1 ("32", "armhf", or anything
+  # else → :arm64), with packages in $2+. Passing a package name as $1 silently
+  # skips it and treats it as the arch selector.
+  install_package arm64 \
     libsdl3-dev \
     libserialport-dev \
     libusb-1.0-0-dev \
