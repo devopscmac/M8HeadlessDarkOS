@@ -78,15 +78,16 @@ echo "[3/5] Building SDL3 for aarch64..."
 # disable X11 and Wayland with SDL_X11=OFF / SDL_WAYLAND=OFF.
 # The actual display backend used at runtime is KMS/DRM (SDL_KMSDRM=ON).
 #
-# NOTE: Do NOT use SDL_UNIX_CONSOLE_BUILD=ON — it forces SDL_VIDEO=OFF via
-# cmake_dependent_option, which cannot be overridden with -DSDL_VIDEO=ON,
-# and removes SDL_Render symbols (SDL_DestroyTexture etc.) from the library.
-echo "  Installing arm64 headers for SDL3 configure checks..."
-sudo apt-get install -y \
-  libx11-dev:arm64 \
-  libdrm-dev:arm64 \
-  libudev-dev:arm64 \
-  2>/dev/null || true
+# NOTE: Do NOT use SDL_UNIX_CONSOLE_BUILD=ON — it uses cmake_dependent_option
+# to FORCE SDL_VIDEO=OFF (ignoring -DSDL_VIDEO=ON), which removes SDL_Render
+# symbols (SDL_DestroyTexture etc.) from the library.
+#
+# SDL3 requires at least one display backend to be present. SDL_OFFSCREEN=ON
+# is a pure-software backend that needs no system libraries, satisfies the
+# check, and keeps SDL_VIDEO + SDL_RENDER ON. At runtime, launch_m8c.sh sets
+# SDL_VIDEODRIVER=kmsdrm so the offscreen backend is never actually used.
+echo "  Installing arm64 libdrm/udev headers (for optional KMS/DRM backend)..."
+sudo apt-get install -y libdrm-dev:arm64 libudev-dev:arm64 2>/dev/null || true
 
 SDL3_TAG="release-3.2.14"
 SDL3_SRC="/tmp/SDL3_src"
@@ -124,6 +125,7 @@ else
     -DSDL_OPENGL=OFF \
     -DSDL_OPENGLES=ON \
     -DSDL_VULKAN=OFF \
+    -DSDL_OFFSCREEN=ON \
     -DSDL_TESTS=OFF \
     -DSDL_EXAMPLES=OFF
 
