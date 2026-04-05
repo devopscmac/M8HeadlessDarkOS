@@ -86,7 +86,7 @@ else
       -DUSE_LIBSERIALPORT=ON \
       -DUSE_LIBUSB=OFF \
       -DUSE_RTMIDI=OFF \
-      -DCMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed"
+      -DCMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed -Wl,--allow-shlib-undefined"
 
     # Build using all available cores
     cmake --build build_arm64 --parallel \$(nproc)
