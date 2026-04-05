@@ -164,4 +164,66 @@ EOF
 
 sudo chroot Arkbuild/ bash -c "chown root:root /etc/m8headlessdarkos_version"
 
+# ---------------------------------------------------------------------------
+# Boot partition: verify and finalize
+# ---------------------------------------------------------------------------
+# dArkOS finishing_touches.sh writes boot.ini and does a lazy umount, but:
+#   1. It uses root=/dev/mmcblk0p2 (fragile) — we want LABEL=ROOTFS
+#   2. It copies logos/ which doesn't exist in this repo, so it may bail early
+#   3. Lazy umount (-l) can leave writes unflushed before losetup -d
+#
+# We remount the boot partition here (if needed), overwrite boot.ini with
+# correct values, sync, and do a proper umount + losetup detach.
+# ---------------------------------------------------------------------------
+echo "==> finishing_r36splus: Verifying boot partition..."
+
+# Re-attach the boot loop device if it was already detached
+if ! mountpoint -q "${mountpoint}" 2>/dev/null; then
+  echo "==> finishing_r36splus: Boot partition not mounted, reattaching..."
+  BOOT_PART_OFFSET=$((SYSTEM_PART_START * 512))
+  BOOT_PART_SIZE=$(( (SYSTEM_PART_END - SYSTEM_PART_START + 1) * 512 ))
+  LOOP_BOOT=$(sudo losetup --find --show \
+    --offset ${BOOT_PART_OFFSET} \
+    --sizelimit ${BOOT_PART_SIZE} \
+    ${DISK})
+  sudo mount ${LOOP_BOOT} ${mountpoint}
+fi
+
+# Verify kernel files are present
+for f in Image uInitrd ${KERNEL_DTB}; do
+  if [ ! -f "${mountpoint}/${f}" ]; then
+    echo "==> finishing_r36splus: WARNING — ${f} missing from boot partition!"
+  else
+    echo "==> finishing_r36splus: OK — ${f} ($(ls -lh ${mountpoint}/${f} | awk '{print $5}'))"
+  fi
+done
+
+# Write boot.ini — use LABEL=ROOTFS (reliable) and correct DTB filename
+echo "==> finishing_r36splus: Writing boot.ini..."
+sudo tee "${mountpoint}/boot.ini" > /dev/null << BOOTINI_EOF
+odroidgoa-uboot-config
+
+# M8HeadlessDarkOS — R36S Plus
+setenv bootargs "root=LABEL=ROOTFS rootwait rw fsck.repair=yes net.ifnames=0 fbcon=rotate:${SCREEN_ROTATION} console=/dev/ttyFIQ0 quiet splash consoleblank=0 vt.global_cursor_default=0"
+
+setenv loadaddr "0x02000000"
+setenv initrd_loadaddr "0x04000000"
+setenv dtb_loadaddr "0x01f00000"
+
+load mmc 1:1 \${loadaddr} Image
+load mmc 1:1 \${initrd_loadaddr} uInitrd
+load mmc 1:1 \${dtb_loadaddr} ${KERNEL_DTB}
+
+booti \${loadaddr} \${initrd_loadaddr} \${dtb_loadaddr}
+BOOTINI_EOF
+
+echo "==> finishing_r36splus: Boot partition contents:"
+ls -lh "${mountpoint}/"
+
+# Sync all writes, then do a clean unmount and loop detach
+sync
+sudo umount "${mountpoint}"
+sudo losetup -d ${LOOP_BOOT}
+echo "==> finishing_r36splus: Boot partition finalized and unmounted."
+
 echo "==> finishing_r36splus: R36S Plus device configuration complete."
