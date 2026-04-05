@@ -125,7 +125,6 @@ if [ ! -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
   cmake -S "${SDL3_SRC}" -B "${SDL3_BUILD}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-    -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
     -DCMAKE_SYSTEM_NAME=Linux \
     -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
     -DCMAKE_INSTALL_PREFIX="${AARCH64_SYSROOT}" \
@@ -141,7 +140,6 @@ if [ ! -f "${AARCH64_SYSROOT}/lib/pkgconfig/sdl3.pc" ]; then
     -DSDL_KMSDRM=ON \
     -DSDL_X11=OFF \
     -DSDL_WAYLAND=OFF \
-    -DSDL_DIRECTFB=OFF \
     -DSDL_OPENGL=OFF \
     -DSDL_OPENGLES=ON \
     -DSDL_VULKAN=OFF \
