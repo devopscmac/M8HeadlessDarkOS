@@ -189,14 +189,33 @@ if ! mountpoint -q "${mountpoint}" 2>/dev/null; then
   sudo mount ${LOOP_BOOT} ${mountpoint}
 fi
 
-# Verify kernel files are present
-for f in Image uInitrd ${KERNEL_DTB}; do
+# Verify kernel files; for DTB, fall back to odroidgo3 if r36splus-specific one is absent
+# (the rg351 kernel branch has odroidgo3 DTS which matches R36S Plus hardware)
+for f in Image uInitrd; do
   if [ ! -f "${mountpoint}/${f}" ]; then
     echo "==> finishing_r36splus: WARNING — ${f} missing from boot partition!"
   else
     echo "==> finishing_r36splus: OK — ${f} ($(ls -lh ${mountpoint}/${f} | awk '{print $5}'))"
   fi
 done
+
+# DTB: use r36splus if present, otherwise use odroidgo3 (same hardware base)
+DTB_TARGET="${mountpoint}/rk3326-r36sPlus-linux.dtb"
+if [ -f "${mountpoint}/${KERNEL_DTB}" ] && [ "${KERNEL_DTB}" != "rk3326-r36sPlus-linux.dtb" ]; then
+  sudo cp "${mountpoint}/${KERNEL_DTB}" "${DTB_TARGET}"
+  echo "==> finishing_r36splus: OK — DTB copied from ${KERNEL_DTB} to rk3326-r36sPlus-linux.dtb"
+elif [ -f "${DTB_TARGET}" ]; then
+  echo "==> finishing_r36splus: OK — rk3326-r36sPlus-linux.dtb already present"
+else
+  # Try odroidgo3 fallback from kernel build dir
+  ODROIDGO3_DTB="${KERNEL_SRC}/arch/arm64/boot/dts/rockchip/rk3326-odroidgo3-linux.dtb"
+  if [ -f "${ODROIDGO3_DTB}" ]; then
+    sudo cp "${ODROIDGO3_DTB}" "${DTB_TARGET}"
+    echo "==> finishing_r36splus: OK — DTB: used odroidgo3 fallback (same hardware)"
+  else
+    echo "==> finishing_r36splus: WARNING — no suitable DTB found for boot partition!"
+  fi
+fi
 
 # Write boot.ini — use LABEL=ROOTFS (reliable) and correct DTB filename
 echo "==> finishing_r36splus: Writing boot.ini..."
@@ -212,7 +231,7 @@ setenv dtb_loadaddr "0x01f00000"
 
 load mmc 1:1 \${loadaddr} Image
 load mmc 1:1 \${initrd_loadaddr} uInitrd
-load mmc 1:1 \${dtb_loadaddr} ${KERNEL_DTB}
+load mmc 1:1 \${dtb_loadaddr} rk3326-r36sPlus-linux.dtb
 
 booti \${loadaddr} \${initrd_loadaddr} \${dtb_loadaddr}
 BOOTINI_EOF
