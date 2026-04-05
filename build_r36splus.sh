@@ -39,7 +39,7 @@ fi
 export CHIPSET=rk3326
 export UNIT=r36splus
 export SCREEN_ROTATION=0
-export KERNEL_DTB="rk3326-r36splus-linux.dtb"
+export KERNEL_DTB="rk3326-r36sPlus-linux.dtb"
 export ROOT_FILESYSTEM_FORMAT=btrfs
 export ROOT_FILESYSTEM_MOUNT_OPTIONS="defaults,compress=zlib,noatime"
 
